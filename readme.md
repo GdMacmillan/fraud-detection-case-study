@@ -1,35 +1,13 @@
-For the next two days we will deal with the entire end to end pipeline of data science through a case study.  We have touched on aspects of this throughout the course but have not yet put all the pieces together.
+# *Fraud Detection App*
 
-We will also touch on some new topics including:
-* cloud services including AWS
-* web applications (and the technology of the web)
-* deploying a DS application
-* a touch of data visualization/presentation
+### Predicting Fraudulent Events Using Machine Learning
 
-#### Themes (you will be assessed on this)
+Gordon MacMillan
 
-* Software best practices (proper encapsulation and functions)
-* product focus
-* deploy models
-* project scoping -- independence
+Galvanize Data Science Immersive - Case Study - March 2017
 
-#### Rough timeline 
+## Introduction
 
-* Wednesday: Project scoping, Model building, and an intro to Web apps
-* Thursday: Web app and deployment
+Say you run a website or app where you host users events which allows the user to see who is coming, share updates, sell tickets and keep track of banners, descriptions, social media and all manner of event data. This website is doing great except a number of visitors to user sites are complaining of fraudulent events.
 
-#### Deliverables
-
-* model (properly commented and encapsulated on Github with a README)
-* exposed API
-* Data visualization (extra)
-
-#### Assessment
-
-* You will be assessed both on quality and cleanliness of code
-* as well as a well functioning solution
-
-#### Notes
-
-* [building your model](model_notes.md): notes on how to get started with the dataset and how to save your model once you've trained it.
-# fraud-detection-case-study
+These fraudulent events may be b2b sales conferences, DJ shows where exclusive celebrities are expected to perform or even Get Rich Quicker book sales schemes. You are interested in having a model that predicts the probability that a new event could be fraud based on a number of predictor features of that event. I'm the data scientist that gets to make this model.
