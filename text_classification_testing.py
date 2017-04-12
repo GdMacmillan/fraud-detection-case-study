@@ -251,5 +251,5 @@ def run_tests(X, y):
 
 if __name__ == '__main__':
     X, y = load_data()
-    run_tests(X, y)
-    
+    # run_tests(X, y)
+    test_GaussianNB(X, y)

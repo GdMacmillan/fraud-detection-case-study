@@ -2,12 +2,40 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from collections import OrderedDict
+from sklearn.feature_extraction.stop_words import ENGLISH_STOP_WORDS
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV
 from sklearn.metrics import make_scorer, accuracy_score, precision_score, recall_score, mean_squared_error
+from sklearn.base import TransformerMixin
 import datetime
+import bs4
+
+class GetDummCols(TransformerMixin):
+    """ Hope to make a transformer with these """
+    def get_dumm(self, df, cols):
+        all_cols = df.columns
+        df = pd.get_dummies(df, columns=cols)
+
+        def diff(first, second):
+            second = set(second)
+            return [item for item in first if item not in second]
+
+        train_cols = diff(df.columns, all_cols)
+        return df, train_cols
+
+    def fit(self, X, y=None, cols):
+        """."""
+        self.X = X
+        return self
+
+    def transform(self, X):
+        """ ."""
+
+
 
 def get_dumm(df, cols):
     all_cols = df.columns
@@ -19,6 +47,31 @@ def get_dumm(df, cols):
 
     train_cols = diff(df.columns, all_cols)
     return df, train_cols
+
+def get_text(soup):
+    for tag in soup.find_all('strong'):
+        tag.decompose()
+    return soup.get_text()
+
+def fit_text_model(X, y, max_df_=.90, min_df_=.001, ngram=(1,2)):
+
+    stopwords = set(list(ENGLISH_STOP_WORDS))
+
+    tfidf = TfidfVectorizer(max_features=10000, max_df = max_df_, min_df=min_df_, stop_words = stopwords, ngram_range = ngram)
+
+    tfidf.fit(X)
+    vector = tfidf.transform(X)
+
+    nb = GaussianNB()
+    nb.fit(vector.todense(), y)
+    predicted_probas = nb.predict_proba(vector.todense())[:, 1]
+
+    return nb, tfidf, predicted_probas
+
+def fit_rf_classifier(X, y, n_estimators_=100, oob_score_=True):
+    rf = RandomForestClassifier(n_estimators=n_estimators_, oob_score=oob_score_)
+    rf.fit(X_train[:, :-1], y_train)
+    return clf, predicted_probas
 
 def load_data():
     df = pd.read_json('data/data.json')
@@ -76,7 +129,14 @@ def load_data():
 
     df['days_user_event'] = df[['event_created', 'user_created']].apply(days_between_timestamp, 1)
 
-    train_cols += additional_train_cols
+    def extract_content_from_desc(x):
+        soup = bs4.BeautifulSoup(x, 'lxml')
+        return get_text(soup)
+
+    df['desc_content'] = df['description'].apply(extract_content_from_desc, 1)
+    NB_cols = ['desc_content']
+
+    train_cols += additional_train_cols + NB_cols
     X = df[train_cols].values
     y = df['fraud'].values
 
@@ -138,6 +198,33 @@ def results_for_adaboost(X, y, train_cols):
     X_train, X_test, y_train, y_test = train_test_split(X, y)
     display_rmse_feature_importances(clf, X_train, X_test, y_train, y_test, train_cols, 'AdaBoost Classifier')
 
+def results_for_NBandRF(X, y):
+    max_df_=.90
+    min_df_=.001
+    ngram=(1,2)
+
+    tfidf = TfidfVectorizer(max_features=10000, max_df = max_df_, min_df=min_df_, stop_words = stopwords, ngram_range = ngram)
+
+    n_estimators_=100
+    oob_score_=True
+    gnb = GaussianNB()
+    rf = RandomForestClassifier(n_estimators=n_estimators_, oob_score=oob_score_)
+
+    pipeline = Pipeline([
+        ('tfidf', tfidf),
+        ('NBclf', gnb),
+        ('RFclf', rf)
+])
+
+
+
+
+
+
+
+
+
+
 def plot_error_rate_of_different_ensemble_clfs(X, y):
     ensemble_clfs = [
         ("RandomForestClassifier, max_features='sqrt'",
@@ -180,6 +267,9 @@ def plot_error_rate_of_different_ensemble_clfs(X, y):
 
 if __name__ == '__main__':
     X, y, train_cols = load_data()
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    nb, tfidf, predicted_probas = fit_text_model(X_train[:, -1], y_train)
+
     # results_for_rf(X, y, train_cols)
     # plot_error_rate_of_different_ensemble_clfs(X, y)
     # results_for_adaboost(X, y, train_cols)
